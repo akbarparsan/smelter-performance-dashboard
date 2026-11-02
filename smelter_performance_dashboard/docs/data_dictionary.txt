@@ -1,0 +1,27 @@
+Sheet	Kolom	Deskripsi	Satuan	Jenis
+Data_Harian	Tanggal	Tanggal operasi	tanggal	Input
+Data_Harian	Bulan	Nomor bulan dari Tanggal	1-12	Formula
+Data_Harian	Konsentrat_Masuk_DMT	Konsentrat tembaga yang diumpankan (dry metric ton)	DMT	Input
+Data_Harian	Cu_Grade_Persen	Kadar tembaga dalam konsentrat	%	Input
+Data_Harian	Au_g_per_DMT	Kadar emas dalam konsentrat	g/DMT	Input
+Data_Harian	Jam_Downtime	Total jam berhenti hari itu, dijumlah dari Downtime_Log	jam	Formula
+Data_Harian	Jam_Operasi	24 - Jam_Downtime	jam	Formula
+Data_Harian	Katoda_Cu_t	Produksi katoda tembaga	ton	Input
+Data_Harian	Emas_kg	Emas yang dihasilkan (dari lumpur anoda), disederhanakan	kg	Input
+Data_Harian	Asam_Sulfat_t	Produksi asam sulfat (produk samping)	ton	Input
+Data_Harian	Slag_t	Produksi slag (produk samping)	ton	Input
+Data_Harian	Energi_MWh	Konsumsi listrik harian	MWh	Input
+Data_Harian	Cu_Masuk_t	Konsentrat x Cu_Grade / 100	ton Cu	Formula
+Data_Harian	Recovery_Persen	Katoda_Cu_t / Cu_Masuk_t x 100	%	Formula
+Data_Harian	Availability_Persen	Jam_Operasi / 24 x 100	%	Formula
+Data_Harian	Energi_per_t_Katoda_MWh	Energi_MWh / Katoda_Cu_t	MWh/t	Formula
+Data_Harian	Rasio_Asam_per_Konsentrat	Asam_Sulfat_t / Konsentrat_Masuk_DMT	t/DMT	Formula
+Downtime_Log	ID_Kejadian	ID unik kejadian	-	Input
+Downtime_Log	Tanggal	Tanggal kejadian	tanggal	Input
+Downtime_Log	Unit	Unit proses yang terdampak	-	Input
+Downtime_Log	Kategori	Terjadwal (perawatan) atau Tidak Terjadwal (gangguan)	-	Input
+Downtime_Log	Penyebab	Penyebab utama	-	Input
+Downtime_Log	Durasi_Jam	Lama berhenti	jam	Input
+QC_Lab	Batch_ID	ID batch katoda	-	Input
+QC_Lab	Cu_Persen / Pb_ppm / S_ppm / Fe_ppm	Hasil analisis lab: kemurnian dan pengotor	% / ppm	Input
+QC_Lab	Status_Mutu	Grade A jika Cu>=99,99%, Pb<=5 ppm, S<=15 ppm; selain itu Off-grade (kriteria disederhanakan)	-	Formula

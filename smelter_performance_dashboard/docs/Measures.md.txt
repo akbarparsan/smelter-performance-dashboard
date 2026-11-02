@@ -1,0 +1,284 @@
+# Daftar DAX: Smelter Performance Review
+
+Melakukan perubahan regional setting menjadi inggris Amerika
+// CULTURES en-US
+Dokumentasi measure, kolom, dan tabel. Semua measure berada di tabel `_Ukuran`. Data sintetis; angka acuan untuk periode 1 Jan–30 Sep 2026.
+
+//  MEASURE 'Data_Harian'[Dim_Tanggal]
+DEFINE
+    MEASURE 'Data_Harian'[Target_Periode_t] = [Target Harian]*COUNTROWS(Data_Harian)
+    MEASURE 'Data_Harian'[Katoda t] = SUM(Data_Harian[Katoda_Cu_t])
+    MEASURE 'Data_Harian'[Cu Masuk t] = SUMX(Data_Harian,Data_Harian[Konsentrat_Masuk_DMT]*Data_Harian[Cu_Grade_Persen]/100)
+    MEASURE 'Data_Harian'[Recovery %] = DIVIDE([Katoda t],[Cu Masuk t])
+    MEASURE 'Data_Harian'[Availability %] = DIVIDE(SUM(Data_Harian[Jam_Operasi]),COUNTROWS(Data_Harian)*24)
+    MEASURE 'Data_Harian'[Downtime Jam] = SUM(Downtime_Log[Durasi_Jam])
+    MEASURE 'Data_Harian'[Downtime Tak Terjadwal Jam] = CALCULATE([Downtime Jam],Downtime_Log[Kategori]="Tidak Terjadwal")
+    MEASURE 'Data_Harian'[Target Katoda t] = SUMX(VALUES(Dim_Tanggal[Bulan_Key]),[Target_Bulanan Value])
+    MEASURE 'Data_Harian'[Selisih vs Target %] = DIVIDE([Katoda t],[Target Katoda t])-1
+    MEASURE 'Data_Harian'[Energi Per Katoda] = DIVIDE(SUM(Data_Harian[Energi_MWh]),[Katoda t])
+    MEASURE 'Data_Harian'[Grade A %] = DIVIDE(CALCULATE(COUNTROWS(QC_Lab),QC_Lab[Status_Mutu]="Grade A"),COUNTROWS(QC_Lab))
+    MEASURE 'Data_Harian'[Laju Produksi t/Jam] = DIVIDE(CALCULATE(SUM(Data_Harian[Katoda_Cu_t]),Data_Harian[Jam_Downtime]=0),CALCULATE(SUM(Data_Harian[Jam_Operasi]),Data_Harian[Jam_Downtime]=0))
+    MEASURE 'Data_Harian'[Output Hilang t (Estimasi)] = [Downtime Jam]*[Laju Produksi t/Jam]
+    MEASURE 'Data_Harian'[Anomali Recovery (hari)] = COUNTROWS(FILTER(Data_Harian,Data_Harian[Recovery_Persen]<95))
+    MEASURE 'Data_Harian'[Efek Volume t] = VAR D0 = DIVIDE(
+    CALCULATE(SUM(Data_Harian[Konsentrat_Masuk_DMT]), ALL(Dim_Tanggal)),
+    CALCULATE(COUNTROWS(Data_Harian), ALL(Dim_Tanggal)))
+VAR g0 = DIVIDE(
+    CALCULATE([Cu Masuk t], ALL(Dim_Tanggal)),
+    CALCULATE(SUM(Data_Harian[Konsentrat_Masuk_DMT]), ALL(Dim_Tanggal)))
+VAR r0 = CALCULATE([Recovery %], ALL(Dim_Tanggal))
+RETURN
+(SUM(Data_Harian[Konsentrat_Masuk_DMT]) - COUNTROWS(Data_Harian) * D0) * g0 * r0
+    MEASURE 'Data_Harian'[Efek Kadar t] = VAR g0 = DIVIDE(
+    CALCULATE([Cu Masuk t], ALL(Dim_Tanggal)),
+    CALCULATE(SUM(Data_Harian[Konsentrat_Masuk_DMT]), ALL(Dim_Tanggal)))
+VAR r0 = CALCULATE([Recovery %], ALL(Dim_Tanggal))
+RETURN
+SUM(Data_Harian[Konsentrat_Masuk_DMT]) * (DIVIDE([Cu Masuk t], SUM(Data_Harian[Konsentrat_Masuk_DMT])) - g0) * r0
+    MEASURE 'Data_Harian'[Efek Recovery t] = VAR r0 = CALCULATE([Recovery %], ALL(Dim_Tanggal))
+RETURN
+[Cu Masuk t] * ([Recovery %] - r0)
+    MEASURE 'Data_Harian'[Selisih vs Target t] = [Katoda t]-[Target Katoda t]
+    MEASURE 'Data_Harian'[Bubble SVG] = VAR h = [Downtime Jam]
+VAR warna = IF(SELECTEDVALUE(Downtime_Log[Kategori]) = "Terjadwal", "%23F2B33D", "%231B3A6B")
+VAR r = FORMAT(MIN(SQRT(h) * 1.8, 12), "0.0", "en-US")
+VAR w = FORMAT(h / 82 * 24, "0.0", "en-US")
+VAR teks = FORMAT(h, "General Number", "en-US")
+VAR bubble = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='48' height='28'><circle cx='24' cy='14' r='" & r & "' fill='" & warna & "'/></svg>"
+VAR bar = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='52' height='28'><rect x='0' y='8' width='" & w & "' height='12' fill='" & warna & "'/><text x='" & (VALUE(w) + 3) & "' y='18' font-family='Segoi UI' font-size='16' fill='%23333'>" & teks & "</text></svg>"
+RETURN IF(h = 0 || ISBLANK(h), BLANK(), IF(ISINSCOPE(Dim_Tanggal[Nama_Bulan]), bubble, bar))
+    MEASURE 'Data_Harian'[Peringkat Penyebab] = RANKX(ALL(Downtime_Log[Penyebab]), [Downtime Tak Terjadwal Jam])
+    MEASURE 'Data_Harian'[Label Pareto] = IF([Peringkat Penyebab] = 5 || [Peringkat Penyebab] = 10, [Pareto Kumulatif Benar %])
+    MEASURE 'Data_Harian'[Ket vs Target] = FORMAT([Selisih vs Target t], "+#,0;-#,0", "en-US") & " t dari " &
+FORMAT([Target Katoda t], "#,0", "en-US") & " t"
+    MEASURE 'Data_Harian'[Ket Grade A] = FORMAT(CALCULATE(COUNTROWS(QC_Lab), QC_Lab[Status_Mutu] = "Grade A"), "#,0", "id-ID")
+& " dari " & FORMAT(COUNTROWS(QC_Lab), "#,0", "id-ID") & " batch"
+    MEASURE 'Data_Harian'[Bar Selisih SVG] = VAR sel = [Selisih vs Target t]
+VAR maxAbs =
+    CALCULATE(
+        MAXX(VALUES(Dim_Tanggal[Bulan_Key]), ABS([Selisih vs Target t])),
+        ALLSELECTED(Dim_Tanggal)
+    )
+VAR nol = 130
+VAR panjang = DIVIDE(ABS(sel), maxAbs) * 150
+VAR warna = IF(sel >= 0, "%231B3A6B", "%23E8622C")
+VAR xBar = IF(sel >= 0, nol, nol - panjang)
+VAR xTeks = IF(sel >= 0, nol + panjang + 1, nol - panjang - 1)
+VAR anchor = IF(sel >= 0, "start", "end")
+VAR teks = FORMAT(sel, "+#,0;-#,0", "en-US")
+RETURN
+    IF(
+        NOT ISINSCOPE(Dim_Tanggal[Nama_Bulan]) || ISBLANK(sel),
+        BLANK(),
+        "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='360' height='32'>"
+        & "<line x1='" & nol & "' y1='0' x2='" & nol & "' y2='1' stroke='%23555' stroke-width='1'/>"
+        & "<rect x='" & FORMAT(xBar, "0.0", "en-US") & "' y='3' width='" & FORMAT(panjang, "0.0", "en-US") & "' height='32' fill='" & warna & "'/>"
+        & "<text x='" & FORMAT(xTeks, "0.0", "en-US") & "' y='20' font-size='16' font-family='Segoe UI' text-anchor='" & anchor & "' fill='%23333'>" & teks & "</text>"
+        & "</svg>"
+    )
+    MEASURE 'Data_Harian'[Efek Total t] = [Efek Volume t] + [Efek Kadar t] + [Efek Recovery t]
+    MEASURE 'Data_Harian'[Target Harian] = 17000*12/365
+    MEASURE 'QC_Lab'[Pareto Kumulatif %] = VAR cur = [Downtime Tak Terjadwal Jam]
+VAR tot = CALCULATE([Downtime Tak Terjadwal Jam], ALLSELECTED(Downtime_Log[Penyebab]))
+RETURN
+DIVIDE(
+    SUMX(
+        FILTER(ALLSELECTED(Downtime_Log[Penyebab]), [Downtime Tak Terjadwal Jam] >= cur),
+        [Downtime Tak Terjadwal Jam]
+    ),
+    tot
+)
+    MEASURE 'QC_Lab'[Batch Off-grade] = CALCULATE(COUNTROWS(QC_Lab), QC_Lab[Status_Mutu] = "Off-grade")
+    MEASURE 'QC_Lab'[Waffle SVG] = VAR c = SELECTEDVALUE(QC_Lab[Penyebab Off])
+VAR warna = SWITCH(c, "Pb", "%23E8622C", "S", "%237A2A9A", "Cu", "%23F2B33D", "%239DB7D5")
+RETURN IF(COUNTROWS(QC_Lab) = 0, BLANK(), "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='9' height='9'><rect width='8' height='8' rx='1' fill='" & warna & "'/></svg>")
+    MEASURE 'QC_Lab'[Pareto Kumulatif Benar %] = VAR Cur = [Downtime Tak Terjadwal Jam]
+VAR Tot = CALCULATE([Downtime Tak Terjadwal Jam], ALL(Downtime_Log[Penyebab]))
+VAR Cum = SUMX(
+    FILTER(ALL(Downtime_Log[Penyebab]), [Downtime Tak Terjadwal Jam] >= Cur),
+    [Downtime Tak Terjadwal Jam])
+RETURN DIVIDE(Cum, Tot)
+    MEASURE 'Target_Bulanan'[Target_Bulanan Value] = [Target Harian]*COUNTROWS(Data_Harian)
+    MEASURE '_Ukuran'[Plan Laju DMT per Hari] = 2400
+    MEASURE '_Ukuran'[Plan Kadar Cu] = 0.255
+    MEASURE '_Ukuran'[Plan Recovery] = 0.98
+    MEASURE '_Ukuran'[Plan Availability] = DIVIDE([Target_Periode_t], COUNTROWS(Data_Harian) * [Plan Laju DMT per Hari] * [Plan Kadar Cu] * [Plan Recovery])
+    MEASURE '_Ukuran'[Target Tahunan t] = 204000
+    MEASURE '_Ukuran'[Konsentrat DMT] = SUM(Data_Harian[Konsentrat_Masuk_DMT])
+    MEASURE '_Ukuran'[Rasio Laju] = DIVIDE([Konsentrat DMT], COUNTROWS(Data_Harian) * [Plan Laju DMT per Hari] * [Availability %])
+    MEASURE '_Ukuran'[Langkah 1 t] = COUNTROWS(Data_Harian) * [Plan Laju DMT per Hari] * [Availability %] * [Plan Kadar Cu] * [Plan Recovery]
+    MEASURE '_Ukuran'[Langkah 2 t] = COUNTROWS(Data_Harian) * [Plan Laju DMT per Hari] * [Availability %] * [Rasio Laju] * [Plan Kadar Cu] * [Plan Recovery]
+    MEASURE '_Ukuran'[Langkah 3 t] = COUNTROWS(Data_Harian) * [Plan Laju DMT per Hari] * [Availability %] * [Rasio Laju] * [Cu Grade %] * [Plan Recovery]
+    MEASURE '_Ukuran'[Cu Grade %] = DIVIDE([Cu Masuk t], [Konsentrat DMT])
+    MEASURE '_Ukuran'[Nilai Bridge] = SWITCH(
+       SELECTEDVALUE(Bridge[Langkah]),
+       "Availability", [Langkah 1 t] - [Target_Periode_t],
+       "Laju umpan",   [Langkah 2 t] - [Langkah 1 t],
+       "Kadar Cu",     [Langkah 3 t] - [Langkah 2 t],
+       "Recovery",     [Katoda t] - [Langkah 3 t]
+   )
+    MEASURE '_Ukuran'[Recovery Harian %] = DIVIDE(SUM(Data_Harian[Katoda_Cu_t]), SUM(Data_Harian[Cu_Masuk_t]))
+    MEASURE '_Ukuran'[Median Recovery %] = MEDIANX(
+       ALLSELECTED(Data_Harian),
+       DIVIDE(Data_Harian[Katoda_Cu_t], Data_Harian[Cu_Masuk_t])
+   )
+    MEASURE '_Ukuran'[Batas Bawah Recovery %] = VAR med = [Median Recovery %]
+   VAR mad =
+       MEDIANX(
+           ALLSELECTED(Data_Harian),
+           ABS(DIVIDE(Data_Harian[Katoda_Cu_t], Data_Harian[Cu_Masuk_t]) - med)
+       )
+   RETURN med - 3 * 1.4826 * mad
+    MEASURE '_Ukuran'[Titik Anomali %] = VAR r = [Recovery Harian %]
+   RETURN IF(r < [Batas Bawah Recovery %], r)
+    MEASURE '_Ukuran'[Hari Anomali] = VAR lb = [Batas Bawah Recovery %]
+   RETURN SUMX(VALUES(Data_Harian[Tanggal]), IF([Recovery Harian %] < lb, 1, 0))
+    MEASURE '_Ukuran'[t per Jam Operasi] = DIVIDE([Katoda t], [Jam Operasi])
+    MEASURE '_Ukuran'[Jam Operasi] = SUM(Data_Harian[Jam_Operasi])
+    MEASURE '_Ukuran'[Jam Top 5 Penyebab] = VAR t =
+       ADDCOLUMNS(
+           VALUES(Downtime_Log[Penyebab]),
+           "@jam", CALCULATE([Total Jam Downtime], Downtime_Log[Kategori] = "Tidak Terjadwal")
+       )
+   RETURN SUMX(TOPN(5, t, [@jam], DESC), [@jam])
+    MEASURE '_Ukuran'[Total Jam Downtime] = SUM(Downtime_Log[Durasi_Jam])
+    MEASURE '_Ukuran'[Jam Dikurangi] = [Jam Top 5 Penyebab] * [Reduksi Downtime Value] / 100
+    MEASURE '_Ukuran'[Tambahan Katoda t] = [Jam Dikurangi] * [t per Jam Operasi]
+    MEASURE '_Ukuran'[Nilai Tambahan USD] = [Tambahan Katoda t] * [Harga Cu USD per t Value]
+    MEASURE '_Ukuran'[Jumlah Kejadian] = COUNTROWS(Downtime_Log)
+    MEASURE '_Ukuran'[MTTR Jam] = DIVIDE([Total Jam Downtime],[Jumlah Kejadian])
+    MEASURE '_Ukuran'[Ambang Kejadian] = AVERAGEX(
+    ALLSELECTED(Downtime_Log[Penyebab]),
+    CALCULATE([Jumlah Kejadian], Downtime_Log[Kategori] = "Tidak Terjadwal"))
+    MEASURE '_Ukuran'[Ambang MTTR] = CALCULATE(
+    DIVIDE([Total Jam Downtime], [Jumlah Kejadian]),
+    ALLSELECTED(Downtime_Log),
+    Downtime_Log[Kategori] = "Tidak Terjadwal"
+)
+    MEASURE '_Ukuran'[Kuadran Bad Actor] = VAR n = [Jumlah Kejadian]
+VAR m = [MTTR Jam]
+VAR nRef = [Ambang Kejadian]
+VAR mRef = [Ambang MTTR]
+RETURN
+IF(
+    ISBLANK(n), BLANK(),
+    SWITCH(
+        TRUE(),
+        n >= nRef && m >= mRef, "Sering dan lama",
+        n <  nRef && m >= mRef, "Jarang tetapi lama",
+        n >= nRef && m <  mRef, "Sering tetapi singkat",
+        "Pantau"
+    )
+)
+    MEASURE '_Ukuran'[Tindakan Disarankan] = SWITCH(
+    [Kuadran Bad Actor],
+    "Sering dan lama", "Analisis akar masalah (RCA)",
+    "Jarang tetapi lama", "Siapkan suku cadang, percepat respons",
+    "Sering tetapi singkat", "Perawatan preventif atau otomatisasi reset",
+    "Pantau", "Cukup dipantau"
+)
+    MEASURE '_Ukuran'[Warna Kuadran] = SWITCH(
+    [Kuadran Bad Actor],
+    "Sering dan lama", "#1F5FBF",
+    "Jarang tetapi lama", "#6B3FA0",
+    "Sering tetapi singkat", "#E0662A",
+    "#B9B6AA"
+)
+    MEASURE '_Ukuran'[Pb Harian ppm] = MAX(QC_Lab[Pb_ppm])
+    MEASURE '_Ukuran'[Batas Spek Pb] = 5
+    MEASURE '_Ukuran'[Peringatan Pb] = [Batas Spek Pb] * 0.8
+    MEASURE '_Ukuran'[Pb Melebihi] = VAR v = [Pb Harian ppm] RETURN IF(v > [Batas Spek Pb], v)
+    MEASURE '_Ukuran'[Batch Pb Melebihi] = VAR lim = [Batas Spek Pb]
+RETURN CALCULATE(COUNTROWS(QC_Lab), QC_Lab[Pb_ppm] > lim)
+    MEASURE '_Ukuran'[Batch Pb Zona Peringatan] = VAR lim = [Batas Spek Pb]
+VAR warn = [Peringatan Pb]
+RETURN CALCULATE(COUNTROWS(QC_Lab), QC_Lab[Pb_ppm] > warn, QC_Lab[Pb_ppm] <= lim)
+    MEASURE '_Ukuran'[S Harian ppm] = MAX(QC_Lab[S_ppm])
+    MEASURE '_Ukuran'[Peringatan S] = [Batas Spek S] * 0.8
+    MEASURE '_Ukuran'[Batas Spek S] = 15
+    MEASURE '_Ukuran'[S Melebihi] = VAR v = [S Harian ppm] RETURN IF(v > [Batas Spek S], v)
+    MEASURE '_Ukuran'[Batch S Melebihi] = VAR lim = [Batas Spek S]
+   RETURN CALCULATE(COUNTROWS(QC_Lab), QC_Lab[S_ppm] > lim)
+    MEASURE 'Reduksi Downtime'[Reduksi Downtime Value] = SELECTEDVALUE('Reduksi Downtime'[Reduksi Downtime], 50)
+    MEASURE 'Harga Cu USD per t'[Harga Cu USD per t Value] = SELECTEDVALUE('Harga Cu USD per t'[Harga Cu USD per t], 10000)
+
+EVALUATE
+    SUMMARIZECOLUMNS(
+        "Dim_Tanggal", [Dim_Tanggal],
+        "Target_Periode_t", [Target_Periode_t],
+        "Katoda t", [Katoda t],
+        "Cu Masuk t", [Cu Masuk t],
+        "Recovery %", [Recovery %],
+        "Availability %", [Availability %],
+        "Downtime Jam", [Downtime Jam],
+        "Downtime Tak Terjadwal Jam", [Downtime Tak Terjadwal Jam],
+        "Target Katoda t", [Target Katoda t],
+        "Selisih vs Target %", [Selisih vs Target %],
+        "Energi Per Katoda", [Energi Per Katoda],
+        "Grade A %", [Grade A %],
+        "Laju Produksi t/Jam", [Laju Produksi t/Jam],
+        "Output Hilang t (Estimasi)", [Output Hilang t (Estimasi)],
+        "Anomali Recovery (hari)", [Anomali Recovery (hari)],
+        "Efek Volume t", [Efek Volume t],
+        "Efek Kadar t", [Efek Kadar t],
+        "Efek Recovery t", [Efek Recovery t],
+        "Selisih vs Target t", [Selisih vs Target t],
+        "Bubble SVG", [Bubble SVG],
+        "Peringkat Penyebab", [Peringkat Penyebab],
+        "Label Pareto", [Label Pareto],
+        "Ket vs Target", [Ket vs Target],
+        "Ket Grade A", [Ket Grade A],
+        "Bar Selisih SVG", [Bar Selisih SVG],
+        "Efek Total t", [Efek Total t],
+        "Target Harian", [Target Harian],
+        "Pareto Kumulatif %", [Pareto Kumulatif %],
+        "Batch Off-grade", [Batch Off-grade],
+        "Waffle SVG", [Waffle SVG],
+        "Pareto Kumulatif Benar %", [Pareto Kumulatif Benar %],
+        "Target_Bulanan Value", [Target_Bulanan Value],
+        "Plan Laju DMT per Hari", [Plan Laju DMT per Hari],
+        "Plan Kadar Cu", [Plan Kadar Cu],
+        "Plan Recovery", [Plan Recovery],
+        "Plan Availability", [Plan Availability],
+        "Target Tahunan t", [Target Tahunan t],
+        "Konsentrat DMT", [Konsentrat DMT],
+        "Rasio Laju", [Rasio Laju],
+        "Langkah 1 t", [Langkah 1 t],
+        "Langkah 2 t", [Langkah 2 t],
+        "Langkah 3 t", [Langkah 3 t],
+        "Cu Grade %", [Cu Grade %],
+        "Nilai Bridge", [Nilai Bridge],
+        "Recovery Harian %", [Recovery Harian %],
+        "Median Recovery %", [Median Recovery %],
+        "Batas Bawah Recovery %", [Batas Bawah Recovery %],
+        "Titik Anomali %", [Titik Anomali %],
+        "Hari Anomali", [Hari Anomali],
+        "t per Jam Operasi", [t per Jam Operasi],
+        "Jam Operasi", [Jam Operasi],
+        "Jam Top 5 Penyebab", [Jam Top 5 Penyebab],
+        "Total Jam Downtime", [Total Jam Downtime],
+        "Jam Dikurangi", [Jam Dikurangi],
+        "Tambahan Katoda t", [Tambahan Katoda t],
+        "Nilai Tambahan USD", [Nilai Tambahan USD],
+        "Jumlah Kejadian", [Jumlah Kejadian],
+        "MTTR Jam", [MTTR Jam],
+        "Ambang Kejadian", [Ambang Kejadian],
+        "Ambang MTTR", [Ambang MTTR],
+        "Kuadran Bad Actor", [Kuadran Bad Actor],
+        "Tindakan Disarankan", [Tindakan Disarankan],
+        "Warna Kuadran", [Warna Kuadran],
+        "Pb Harian ppm", [Pb Harian ppm],
+        "Batas Spek Pb", [Batas Spek Pb],
+        "Peringatan Pb", [Peringatan Pb],
+        "Pb Melebihi", [Pb Melebihi],
+        "Batch Pb Melebihi", [Batch Pb Melebihi],
+        "Batch Pb Zona Peringatan", [Batch Pb Zona Peringatan],
+        "S Harian ppm", [S Harian ppm],
+        "Peringatan S", [Peringatan S],
+        "Batas Spek S", [Batas Spek S],
+        "S Melebihi", [S Melebihi],
+        "Batch S Melebihi", [Batch S Melebihi],
+        "Reduksi Downtime Value", [Reduksi Downtime Value],
+        "Harga Cu USD per t Value", [Harga Cu USD per t Value]
+    )
+
