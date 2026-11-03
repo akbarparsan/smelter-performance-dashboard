@@ -28,7 +28,7 @@ Output katoda 156.326 t, 2,5% di atas target prorata (152.581 t), tetapi 3 dari 
 |`data/Downtime\\\_Log.csv`|Kejadian berhenti per unit dan penyebab|73|
 |`data/QC\\\_Lab.csv`|Hasil lab katoda per batch (Cu, Pb, S, Fe)|273|
 
-Kamus data lengkap: [docs/data\_dictionary.md](smelter_performance_dashboard/docs/data_dictionary.md).
+Kamus data lengkap: [smelter_performance_dashboard/docs/data\_dictionary.md](smelter_performance_dashboard/docs/data_dictionary.md).
 
 ## Metode
 
