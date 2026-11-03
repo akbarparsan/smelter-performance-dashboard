@@ -75,7 +75,7 @@ Kamus data lengkap: [smelter_performance_dashboard/docs/data\_dictionary.md](sme
 |Mutu dan efisiensi|Grid batch, control chart Pb dan S, energi vs downtime|
 |Model dan metode|Model data, measure, asumsi|
 
-PDF: [smelter_performance_dashboard/docs\_dashboard.pdf](smelter_performance_dashboard/docs/dashboard.pdf)
+PDF: [smelter_performance_dashboard/docs\dashboard.pdf](smelter_performance_dashboard/docs/dashboard.pdf)
 
 ## Cara membuka
 
