@@ -6,7 +6,7 @@ Power BI dashboard on synthetic smelter data: output vs target, downtime, and qu
 
 Studi kasus pelaporan operasi smelter tembaga (1 Jan–30 Sep 2026): dashboard Power BI 4 halaman yang menjawab apakah output memenuhi target, apa penyebab selisihnya, dan di mana risiko operasional serta mutu.
 
-!\[Ringkasan](docs/img/01\_ringkasan.png)
+!\[Ringkasan](smelter_performance_dashboard/smelter_performance_dashboard/docs/img/01\_ringkasan.png)
 
 ## Ringkasan untuk manajemen
 
