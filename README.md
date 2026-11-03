@@ -1,4 +1,4 @@
-# smelter-performance-dashboard
+# smelter_performance_dashboard
 Power BI dashboard on synthetic smelter data: output vs target, downtime, and quality
 # Smelter Performance Review: Output, Downtime dan Mutu
 
@@ -28,7 +28,7 @@ Output katoda 156.326 t, 2,5% di atas target prorata (152.581 t), tetapi 3 dari 
 |`data/Downtime\\\_Log.csv`|Kejadian berhenti per unit dan penyebab|73|
 |`data/QC\\\_Lab.csv`|Hasil lab katoda per batch (Cu, Pb, S, Fe)|273|
 
-Kamus data lengkap: [docs/data\_dictionary.md](docs/data_dictionary.md).
+Kamus data lengkap: [docs/data\_dictionary.md](smelter_performance_dashboard/docs/data_dictionary.md).
 
 ## Metode
 
@@ -75,7 +75,7 @@ Kamus data lengkap: [docs/data\_dictionary.md](docs/data_dictionary.md).
 |Mutu dan efisiensi|Grid batch, control chart Pb dan S, energi vs downtime|
 |Model dan metode|Model data, measure, asumsi|
 
-PDF: [docs/dashboard.pdf](docs/dashboard.pdf)
+PDF: [docs/dashboard.pdf](smelter_performance_dashboard/docs/dashboard.pdf)
 
 ## Cara membuka
 
