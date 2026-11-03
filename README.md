@@ -2,7 +2,7 @@
 Power BI dashboard on synthetic smelter data: output vs target, downtime, and quality
 # Smelter Performance Review: Output, Downtime dan Mutu
 
-> \\\*\\\*Dataset sintetis.\\\*\\\* Seluruh data dibuat acak untuk latihan. Ini bukan data PT Amman Mineral atau perusahaan mana pun, dan proyek ini tidak berafiliasi dengan perusahaan tersebut.
+> \\\*\\\*Dataset sintetis.\\\*\\\* Seluruh data dibuat acak untuk latihan. Ini bukan data perusahaan mana pun, dan proyek ini tidak berafiliasi dengan perusahaan tersebut.
 
 Studi kasus pelaporan operasi smelter tembaga (1 Jan–30 Sep 2026): dashboard Power BI 4 halaman yang menjawab apakah output memenuhi target, apa penyebab selisihnya, dan di mana risiko operasional serta mutu.
 
