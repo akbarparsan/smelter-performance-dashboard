@@ -100,7 +100,15 @@ smelter-performance-dashboard/
 
 ## Kontak
 
-Wahyu Akbar · <a href="https://www.linkedin.com/in/akbarparsan">
-  <img src="https://cdn.simpleicons.org/linkedin/0A66C2" width="40" height="40" alt="LinkedIn" />
-</a> · @akbarparsan@gmail.com
+Wahyu Akbar · <p align="left">
+  <a href="https://www.linkedin.com/in/akbarparsan">
+    <img src="https://img.shields.io/badge/LinkedIn-0A66C2?style=for-the-badge&logo=linkedin&logoColor=white" alt="LinkedIn" />
+  </a>
+  <a href="https://instagram.com/akbarparsan">
+    <img src="https://img.shields.io/badge/Instagram-E4405F?style=for-the-badge&logo=instagram&logoColor=white" alt="Instagram" />
+  </a>
+  <a href="mailto:akbarparsan@gmail.com">
+    <img src="https://img.shields.io/badge/Email-D14836?style=for-the-badge&logo=gmail&logoColor=white" alt="Email" />
+  </a>
+</p>
 
