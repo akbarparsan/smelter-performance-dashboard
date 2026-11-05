@@ -100,5 +100,5 @@ smelter-performance-dashboard/
 
 ## Kontak
 
-Wahyu Akbar · http://www.linkedin.com/in/wahyu-akbar-05a16424b · @akbarparsan@gmail.com
+Wahyu Akbar · http://www.linkedin.com/in/akbarparsan · @akbarparsan@gmail.com
 
